@@ -13,6 +13,32 @@ Real-time multiplayer word guessing game built with **Go** and **Server-Sent Eve
 
 ---
 
+![Progress](./Progress.png)
+
 ## **Getting Started**
 
-![Progress](./Progress.png)
+### Prerequisites
+
+- **Go**: Ensure you have Go installed. You can download it from [golang.org](https://golang.org/dl/).
+- **Git**: Ensure you have Git installed. You can download it from [git-scm.com](https://git-scm.com/).
+
+### Installation
+
+1. **Clone the repository**:
+
+   ```sh
+   git clone https://github.com/yourusername/guessstream.git
+   cd guessstream
+   ```
+
+2. **Run the server**:
+
+   ```sh
+   go run main.go
+   ```
+
+   The server will start on `localhost:8080`.
+
+3. **Open the game**:
+
+   Open `index.html` in your browser to start playing.
