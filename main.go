@@ -36,6 +36,7 @@ func sseHandler(writer http.ResponseWriter, request *http.Request) {
 	mu.Unlock()
 	printClients()
 
+	// To create a cancellable context that does not automatically timeout.
 	ctx, cancel := context.WithCancel(request.Context())
 	defer cancel()
 
@@ -53,7 +54,6 @@ func sseHandler(writer http.ResponseWriter, request *http.Request) {
 	for message := range clientChannel {
 		fmt.Fprintf(writer, "data: %s\n\n", message)
 		flusher.Flush()
-
 	}
 }
 
