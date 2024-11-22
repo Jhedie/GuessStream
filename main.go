@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var (
@@ -14,10 +15,11 @@ var (
 
 func sseHandler(writer http.ResponseWriter, request *http.Request) {
 	// Set headers for SSE
-
 	writer.Header().Set("Content-Type", "text/event-stream")
 	writer.Header().Set("Cache-Control", "no-cache")
 	writer.Header().Set("Connection", "close")
+
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Ensure the connection supports flushing
 	flusher, ok := writer.(http.Flusher)
@@ -66,8 +68,25 @@ func printClients() {
 	}
 }
 
+func broadcast(message string) {
+	mu.Lock()
+	defer mu.Unlock()
+	for clientChan := range clients {
+		clientChan <- message
+	}
+}
+
 func main() {
 	http.HandleFunc("/events", sseHandler)
+
+	go func() {
+		for {
+			message := "Test message"
+			println("sending messages")
+			broadcast(message)
+			time.Sleep(5 * time.Second) // Broadcast a message every 5 seconds
+		}
+	}()
 
 	fmt.Println("Server running at http://localhost:8080")
 	err := http.ListenAndServe(":8080", nil)
