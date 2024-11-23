@@ -118,7 +118,7 @@
     </div>
 
     <script>
-        const eventSource = new EventSource("/events");
+        const eventSource = new EventSource("http://localhost:8080/events");
 
         eventSource.onmessage = function (event) {
             const messagesDiv = document.getElementById("messages");
@@ -130,15 +130,15 @@
 
         document.getElementById("guess-form").addEventListener("submit", function (event) {
             event.preventDefault();
-            guessInput = document.getElementById("guess-input");
-            alert(guessInput.value);
-
-            fetch("/guess", {
+            const guessInput = document.getElementById("guess-input").value;
+            fetch("http://localhost:8080/guess", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `guess=${guess}`
-            }).then(() => {
+                body: `guess=${guessInput}`
+            }).then((result) => {
                 document.getElementById("guess-input").value = "";
+            }).catch((error) => {
+                console.error("Error:", error);
             });
         });
 

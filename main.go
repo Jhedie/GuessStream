@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
-	"time"
 )
 
 var (
-	clients = make(map[chan string]bool)
-	mu      sync.Mutex
+	clients    = make(map[chan string]bool)
+	mu         sync.Mutex
+	guesses    []string
+	secretWord = "golang"
 )
 
 func sseHandler(writer http.ResponseWriter, request *http.Request) {
@@ -69,24 +71,52 @@ func printClients() {
 }
 
 func broadcast(message string) {
+	println("Broadcasting")
+
 	mu.Lock()
 	defer mu.Unlock()
-	for clientChan := range clients {
-		clientChan <- message
+	for clientChannel := range clients {
+		clientChannel <- message
 	}
 }
 
+func guessHandler(writer http.ResponseWriter, request *http.Request) {
+	// Set headers for SSE
+	writer.Header().Set("Content-Type", "text/event-stream")
+	writer.Header().Set("Cache-Control", "no-cache")
+	writer.Header().Set("Connection", "close")
+
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	err := request.ParseForm()
+	if err != nil {
+		http.Error(writer, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+	playerGuess := strings.ToLower(request.FormValue("guess"))
+
+	fmt.Println("Player guess:", playerGuess)
+
+	mu.Lock()
+	guesses = append(guesses, playerGuess)
+	mu.Unlock()
+
+	if playerGuess == secretWord {
+		println("Right guess")
+		broadcast(fmt.Sprintf("🎉 Correct! The word was '%s'.", secretWord))
+		broadcast("Game Over! Reset to play again.")
+	} else {
+		println("Right guess")
+
+		broadcast(fmt.Sprintf("❌ Guess: '%s'", playerGuess))
+	}
+	// Optionally, you can send a response back to the client
+	writer.WriteHeader(http.StatusOK)
+	writer.Write([]byte("Guess received"))
+}
 func main() {
 	http.HandleFunc("/events", sseHandler)
-
-	go func() {
-		for {
-			message := "Test message"
-			println("sending messages")
-			broadcast(message)
-			time.Sleep(5 * time.Second) // Broadcast a message every 5 seconds
-		}
-	}()
+	http.HandleFunc("/guess", guessHandler)
 
 	fmt.Println("Server running at http://localhost:8080")
 	err := http.ListenAndServe(":8080", nil)
