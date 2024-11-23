@@ -3,16 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"strings"
 	"sync"
 )
 
 var (
-	clients    = make(map[chan string]bool)
-	mu         sync.Mutex
-	guesses    []string
-	secretWord = "golang"
+	clients     = make(map[chan string]bool)
+	mu          sync.Mutex
+	guesses     []string
+	secretWord  = "golang"
+	randomWords = []string{"golang", "race", "yellow"}
 )
 
 func sseHandler(writer http.ResponseWriter, request *http.Request) {
@@ -72,7 +74,6 @@ func printClients() {
 
 func broadcast(message string) {
 	println("Broadcasting")
-
 	mu.Lock()
 	defer mu.Unlock()
 	for clientChannel := range clients {
@@ -102,21 +103,43 @@ func guessHandler(writer http.ResponseWriter, request *http.Request) {
 	mu.Unlock()
 
 	if playerGuess == secretWord {
-		println("Right guess")
 		broadcast(fmt.Sprintf("🎉 Correct! The word was '%s'.", secretWord))
 		broadcast("Game Over! Reset to play again.")
 	} else {
-		println("Right guess")
-
 		broadcast(fmt.Sprintf("❌ Guess: '%s'", playerGuess))
 	}
 	// Optionally, you can send a response back to the client
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte("Guess received"))
 }
+
+func getNewGuessWord() {
+	println("new Random word")
+	secretWord = randomWords[rand.IntN(len(randomWords))]
+	println("Secret word", secretWord)
+}
+
+func resetHandler(writer http.ResponseWriter, request *http.Request) {
+
+	// Set headers for SSE
+	writer.Header().Set("Content-Type", "text/event-stream")
+	writer.Header().Set("Cache-Control", "no-cache")
+	writer.Header().Set("Connection", "close")
+
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	println("Cleaning up")
+	mu.Lock()
+	guesses = nil
+	getNewGuessWord()
+	mu.Unlock()
+
+	broadcast("RESET")
+}
 func main() {
 	http.HandleFunc("/events", sseHandler)
 	http.HandleFunc("/guess", guessHandler)
+	http.HandleFunc("/reset", resetHandler)
 
 	fmt.Println("Server running at http://localhost:8080")
 	err := http.ListenAndServe(":8080", nil)

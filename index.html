@@ -121,10 +121,17 @@
         const eventSource = new EventSource("http://localhost:8080/events");
 
         eventSource.onmessage = function (event) {
+
+
             const messagesDiv = document.getElementById("messages");
-            const newMessage = document.createElement("div");
-            newMessage.textContent = event.data;
-            messagesDiv.appendChild(newMessage);
+
+            if (event.data === "RESET") {
+                messagesDiv.innerHTML = ""; // Clear the messages div
+            } else {
+                const newMessage = document.createElement("div");
+                newMessage.textContent = event.data;
+                messagesDiv.appendChild(newMessage);
+            }
         };
 
 
@@ -137,6 +144,19 @@
                 body: `guess=${guessInput}`
             }).then((result) => {
                 document.getElementById("guess-input").value = "";
+            }).catch((error) => {
+                console.error("Error:", error);
+            });
+        });
+
+
+        document.getElementById("reset-game").addEventListener("click", function () {
+            fetch("http://localhost:8080/reset", {
+                method: "POST"
+            }).then((result) => {
+                console.log("Game reset");
+                const messagesDiv = document.getElementById("messages");
+                messagesDiv.innerHTML = ""; // Clear the messages div
             }).catch((error) => {
                 console.error("Error:", error);
             });
