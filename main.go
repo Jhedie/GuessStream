@@ -18,12 +18,6 @@ var (
 )
 
 func sseHandler(writer http.ResponseWriter, request *http.Request) {
-	// Set headers for SSE
-	writer.Header().Set("Content-Type", "text/event-stream")
-	writer.Header().Set("Cache-Control", "no-cache")
-	writer.Header().Set("Connection", "close")
-
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Ensure the connection supports flushing
 	flusher, ok := writer.(http.Flusher)
@@ -82,12 +76,6 @@ func broadcast(message string) {
 }
 
 func guessHandler(writer http.ResponseWriter, request *http.Request) {
-	// Set headers for SSE
-	writer.Header().Set("Content-Type", "text/event-stream")
-	writer.Header().Set("Cache-Control", "no-cache")
-	writer.Header().Set("Connection", "close")
-
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	err := request.ParseForm()
 	if err != nil {
@@ -121,13 +109,6 @@ func getNewGuessWord() {
 
 func resetHandler(writer http.ResponseWriter, request *http.Request) {
 
-	// Set headers for SSE
-	writer.Header().Set("Content-Type", "text/event-stream")
-	writer.Header().Set("Cache-Control", "no-cache")
-	writer.Header().Set("Connection", "close")
-
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
-
 	println("Cleaning up")
 	mu.Lock()
 	guesses = nil
@@ -136,14 +117,48 @@ func resetHandler(writer http.ResponseWriter, request *http.Request) {
 
 	broadcast("RESET")
 }
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")                   // Allow all origins
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS") // Allowed methods
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")       // Allowed headers
+		w.Header().Set("Access-Control-Allow-Credentials", "true")           // Allow credentials
+
+		// Set headers for SSE
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "close")
+		// Handle preflight requests (OPTIONS method)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Pass the request to the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
-	http.HandleFunc("/events", sseHandler)
-	http.HandleFunc("/guess", guessHandler)
-	http.HandleFunc("/reset", resetHandler)
+	//Create a new ServeMux
+	mux := http.NewServeMux()
+
+	// Wrap the ServeMux with the CORS middleware
+	handlerWithCORS := corsMiddleware(mux)
+
+	mux.HandleFunc("/events", sseHandler)
+	mux.HandleFunc("/guess", guessHandler)
+	mux.HandleFunc("/reset", resetHandler)
+
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: handlerWithCORS,
+	}
 
 	fmt.Println("Server running at http://localhost:8080")
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		fmt.Println("Error starting server:", err)
 	}
 }
