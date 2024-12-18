@@ -1,0 +1,10 @@
+# Ignore the .git directory
+.git
+
+# Ignore any log files
+*.log
+
+# Ignore any temporary files
+*.tmp
+
+/progress

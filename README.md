@@ -42,3 +42,10 @@ Real-time multiplayer word guessing game built with **Go** and **Server-Sent Eve
 3. **Open the game**:
 
    Open `index.html` in your browser to start playing.
+
+
+Deployment Steps:
+
+Build and test the image:
+   docker build -t word-game-app:latest .
+   docker run -p 8080:8080 word-game-app:latest
