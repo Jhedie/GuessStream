@@ -43,9 +43,26 @@ Real-time multiplayer word guessing game built with **Go** and **Server-Sent Eve
 
    Open `index.html` in your browser to start playing.
 
-
 Deployment Steps:
 
 Build and test the image:
-   docker build -t word-game-app:latest .
-   docker run -p 8080:8080 word-game-app:latest
+
+```
+docker build -t word-game-frontend:latest .
+docker run -p 8080:8080 word-game-frontend:latest
+
+docker build -t word-game-backend:latest .
+docker run -p 8080:8080 word-game-backend:latest
+```
+
+Push the Docker image to a container registry like Docker Hub, Amazon ECR, or GitHub Container Registry:
+
+```
+cd Frontend
+   docker tag word-game-frontend:latest <your-dockerhub-username>/word-game-app:latest
+   docker push <your-dockerhub-username>/word-game-frontend:latest
+
+cd Backend
+   docker tag word-game-backend:latest <your-dockerhub-username>/word-game-app:latest
+   docker push <your-dockerhub-username>/word-game-backend:latest
+```
