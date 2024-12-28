@@ -12,6 +12,7 @@ import (
 var (
 	clients     = make(map[chan string]bool)
 	mu          sync.Mutex
+	players     = make(map[string]bool) // Track players by their identifiers (e.g., IPs)
 	guesses     []string
 	secretWord  = "golang"
 	randomWords = []string{"golang", "race", "yellow"}
@@ -27,14 +28,18 @@ func sseHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	// Create a channel to send messages to the client
-	clientChannel := make(chan string)
+	clientChannel := make(chan string, 10) // Buffered channel with capacity of 10
+	clientID := request.RemoteAddr         // Use IP address as an identifier
 
 	// Lock the map to safely add this client
 	mu.Lock()
 	println("Client joined")
 	clients[clientChannel] = true
+	players[clientID] = true
 	mu.Unlock()
 	printClients()
+
+	broadcastPlayerList() // Broadcast updated player list to all clients
 
 	// To create a cancellable context that does not automatically timeout.
 	ctx, cancel := context.WithCancel(request.Context())
@@ -43,17 +48,24 @@ func sseHandler(writer http.ResponseWriter, request *http.Request) {
 	// Listen for context cancellation
 	go func() {
 		<-ctx.Done() // Wait for cancelation
+
 		mu.Lock()
 		delete(clients, clientChannel)
-		println("Client left due to cancelation")
+		delete(players, clientID)
+		println("Client left due to cancellation")
 		mu.Unlock()
+
 		printClients()
+
 		close(clientChannel)
+		broadcastPlayerList() // Update player list on leave
+
 	}()
 
 	for message := range clientChannel {
 		fmt.Fprintf(writer, "data: %s\n\n", message)
 		flusher.Flush()
+		println("Flushed message to client:", message)
 	}
 }
 
@@ -67,12 +79,28 @@ func printClients() {
 }
 
 func broadcast(message string) {
-	println("Broadcasting")
+	println("Broadcasting message:", message)
 	mu.Lock()
 	defer mu.Unlock()
 	for clientChannel := range clients {
-		clientChannel <- message
+		select {
+		case clientChannel <- message:
+		default:
+			println("Client channel is unresponsive, skipping")
+		}
 	}
+}
+
+func broadcastPlayerList() {
+	playerList := make([]string, 0, len(players))
+	mu.Lock()
+	for player := range players {
+		playerList = append(playerList, player)
+	}
+	mu.Unlock()
+
+	message := fmt.Sprintf("PLAYERS: %s", strings.Join(playerList, ", "))
+	broadcast(message)
 }
 
 func guessHandler(writer http.ResponseWriter, request *http.Request) {
@@ -87,6 +115,7 @@ func guessHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Println("Player guess:", playerGuess)
 
 	mu.Lock()
+	fmt.Println("appending guesses message")
 	guesses = append(guesses, playerGuess)
 	mu.Unlock()
 
@@ -96,7 +125,6 @@ func guessHandler(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		broadcast(fmt.Sprintf("❌ Guess: '%s'", playerGuess))
 	}
-	// Optionally, you can send a response back to the client
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte("Guess received"))
 }

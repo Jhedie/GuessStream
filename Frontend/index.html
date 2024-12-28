@@ -121,11 +121,19 @@
         const eventSource = new EventSource("http://localhost:8080/events");
 
         eventSource.onmessage = function (event) {
-
-
             const messagesDiv = document.getElementById("messages");
-
-            if (event.data === "RESET") {
+            if (event.data.startsWith("PLAYERS:")) {
+                // Extract and display the player list
+                const playerList = event.data.replace("PLAYERS: ", "").split(", ");
+                const playersList = document.getElementById("players");
+                playersList.innerHTML = ""; // Clear current list
+                playerList.forEach(player => {
+                    const playerItem = document.createElement("li");
+                    playerItem.textContent = player;
+                    playersList.appendChild(playerItem);
+                });
+            }
+            else if (event.data === "RESET") {
                 messagesDiv.innerHTML = ""; // Clear the messages div
             } else {
                 const newMessage = document.createElement("div");
