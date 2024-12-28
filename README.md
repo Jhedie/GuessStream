@@ -13,7 +13,7 @@ Real-time multiplayer word guessing game built with **Go** and **Server-Sent Eve
 
 ---
 
-![Progress](./progress/Progress2.png)
+![Progress](./progress/Progress3.png)
 
 ## **Getting Started**
 
