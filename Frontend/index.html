@@ -118,58 +118,61 @@
     </div>
 
     <script>
-        const eventSource = new EventSource("http://localhost:8080/events");
 
-        eventSource.onmessage = function (event) {
-            const messagesDiv = document.getElementById("messages");
-            if (event.data.startsWith("PLAYERS:")) {
-                // Extract and display the player list
-                const playerList = event.data.replace("PLAYERS: ", "").split(", ");
-                const playersList = document.getElementById("players");
-                playersList.innerHTML = ""; // Clear current list
-                playerList.forEach(player => {
-                    const playerItem = document.createElement("li");
-                    playerItem.textContent = player;
-                    playersList.appendChild(playerItem);
-                });
-            }
-            else if (event.data === "RESET") {
-                messagesDiv.innerHTML = ""; // Clear the messages div
-            } else {
-                const newMessage = document.createElement("div");
-                newMessage.textContent = event.data;
-                messagesDiv.appendChild(newMessage);
-            }
-        };
+        document.addEventListener("DOMContentLoaded", function () {
+            alert("Document loaded");
+            const eventSource = new EventSource("http://localhost:8080/events");
 
-
-        document.getElementById("guess-form").addEventListener("submit", function (event) {
-            event.preventDefault();
-            const guessInput = document.getElementById("guess-input").value;
-            fetch("http://localhost:8080/guess", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `guess=${guessInput}`
-            }).then((result) => {
-                document.getElementById("guess-input").value = "";
-            }).catch((error) => {
-                console.error("Error:", error);
-            });
-        });
-
-
-        document.getElementById("reset-game").addEventListener("click", function () {
-            fetch("http://localhost:8080/reset", {
-                method: "POST"
-            }).then((result) => {
-                console.log("Game reset");
+            eventSource.onmessage = function (event) {
                 const messagesDiv = document.getElementById("messages");
-                messagesDiv.innerHTML = ""; // Clear the messages div
-            }).catch((error) => {
-                console.error("Error:", error);
+                if (event.data.startsWith("PLAYERS:")) {
+                    // Extract and display the player list
+                    const playerList = event.data.replace("PLAYERS: ", "").split(", ");
+                    const playersList = document.getElementById("players");
+                    playersList.innerHTML = ""; // Clear current list
+                    playerList.forEach(player => {
+                        const playerItem = document.createElement("li");
+                        playerItem.textContent = player;
+                        playersList.appendChild(playerItem);
+                    });
+                }
+                else if (event.data === "RESET") {
+                    messagesDiv.innerHTML = ""; // Clear the messages div
+                } else {
+                    const newMessage = document.createElement("div");
+                    newMessage.textContent = event.data;
+                    messagesDiv.appendChild(newMessage);
+                }
+            };
+
+
+            document.getElementById("guess-form").addEventListener("submit", function (event) {
+                event.preventDefault();
+                const guessInput = document.getElementById("guess-input").value;
+                fetch("http://localhost:8080/guess", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `guess=${guessInput}`
+                }).then((result) => {
+                    document.getElementById("guess-input").value = "";
+                }).catch((error) => {
+                    console.error("Error:", error);
+                });
+            });
+
+
+            document.getElementById("reset-game").addEventListener("click", function () {
+                fetch("http://localhost:8080/reset", {
+                    method: "POST"
+                }).then((result) => {
+                    console.log("Game reset");
+                    const messagesDiv = document.getElementById("messages");
+                    messagesDiv.innerHTML = ""; // Clear the messages div
+                }).catch((error) => {
+                    console.error("Error:", error);
+                });
             });
         });
-
     </script>
 </body>
 
