@@ -6,8 +6,8 @@ pipeline {
                 script {
                     echo "Test"
                     def changes = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim()
-                    env.FRONTEND_CHANGED = changes.contains('frontend/')
-                    env.BACKEND_CHANGED = changes.contains('backend/')
+                    env.FRONTEND_CHANGED = changes.contains('Frontend/')
+                    env.BACKEND_CHANGED = changes.contains('Backend/')
                 }
             }
         }
@@ -25,7 +25,7 @@ pipeline {
                 expression {env.BACKEND_CHANGED == 'true'}
             }
             steps {
-                dir('Frontend')
+                dir('Backend')
                 sh(script: "ls")
             }
         }
