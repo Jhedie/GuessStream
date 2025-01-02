@@ -5,15 +5,18 @@ pipeline {
             steps {
                 script {
                     echo "Test"
-                    def changes = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim()
-                    env.FRONTEND_CHANGED = changes.contains('Frontend/')
-                    env.BACKEND_CHANGED = changes.contains('Backend/')
+                    def deploymentOption = input(
+                        id: 'deploymentOption', message:'Select the parts to deploy:', parameters: [
+                            choice(name: 'DEPLOY_PART', choices: ['Frontend', 'Backend', 'Both'], description: 'Choose which part to deploy')
+                        ]
+                    )
+                    env.DEPLOY_PART = deploymentOption
                 }
             }
         }
         stage ('Deploy Frontend') {
             when {
-                expression {env.FRONTEND_CHANGED == 'true'}
+                expression { env.DEPLOY_PART == 'Frontend' || env.DEPLOY_PART == 'Both' }
             }
             steps {
                 dir('Frontend')
@@ -22,7 +25,7 @@ pipeline {
         }
         stage ('Deploy Backend') {
             when {
-                expression {env.BACKEND_CHANGED == 'true'}
+                expression { env.DEPLOY_PART == 'Backend' || env.DEPLOY_PART == 'Both' }
             }
             steps {
                 dir('Backend')
