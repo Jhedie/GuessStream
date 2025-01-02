@@ -19,8 +19,9 @@ pipeline {
                 expression { env.DEPLOY_PART == 'Frontend' || env.DEPLOY_PART == 'Both' }
             }
             steps {
-                dir('Frontend')
-                sh(script: "ls")
+                dir('Frontend') {
+                    sh(script: "ls")
+                }
             }
         }
         stage ('Deploy Backend') {
@@ -28,8 +29,9 @@ pipeline {
                 expression { env.DEPLOY_PART == 'Backend' || env.DEPLOY_PART == 'Both' }
             }
             steps {
-                dir('Backend')
-                sh(script: "ls")
+                dir('Backend') {
+                    sh(script: "ls")
+                }
             }
         }
     }
