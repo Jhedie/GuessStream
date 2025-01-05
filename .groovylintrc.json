@@ -1,0 +1,17 @@
+{
+  "rules": {
+    "CompileStatic": {
+      "enabled": false
+    }
+  },
+  "overrides": [
+    {
+      "files": ["Jenkinsfile"],
+      "rules": {
+        "CompileStatic": {
+          "enabled": false
+        }
+      }
+    }
+  ]
+}
