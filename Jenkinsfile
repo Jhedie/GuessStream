@@ -80,10 +80,10 @@ pipeline {
                 }
             }
         }
-        post {
-            always {
-                cleanWs(disableDeferredWipeout: true)
-            }
-        }
+    }
+    post {
+        always {
+            cleanWs(disableDeferredWipeout: true)
         }
     }
+}
