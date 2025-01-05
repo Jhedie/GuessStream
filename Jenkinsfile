@@ -54,11 +54,13 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: '4435865f-e00c-4a92-a656-eaec1939a9da', variable: 'DOCKER_CREDENTIALS')]) {
                     sh(script: "echo $DOCKER_CREDENTIALS")
-                    if (env.DEPLOY_PART == 'Frontend' || env.DEPLOY_PART == 'Both') {
-                        sh 'docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}'
-                    }
-                    if (env.DEPLOY_PART == 'Backend' || env.DEPLOY_PART == 'Both') {
-                        sh 'docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}'
+                    script {
+                        if (env.DEPLOY_PART == 'Frontend' || env.DEPLOY_PART == 'Both') {
+                            sh 'docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}'
+                        }
+                        if (env.DEPLOY_PART == 'Backend' || env.DEPLOY_PART == 'Both') {
+                            sh 'docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}'
+                        }
                     }
                 }
             }
@@ -66,12 +68,14 @@ pipeline {
         stage('Deploy Updated Containers') {
             steps {
                 withCredentials([string(credentialsId: '4435865f-e00c-4a92-a656-eaec1939a9da', variable: 'DOCKER_CREDENTIALS')]) {
-                        sh(script: "echo $DOCKER_CREDENTIALS")
-                    if (env.DEPLOY_PART == 'Frontend' || env.DEPLOY_PART == 'Both') {
-                        sh 'kubectl set image deployment/frontend frontend=${FRONTEND_IMAGE}:${BUILD_NUMBER}'
-                    }
-                    if (env.DEPLOY_PART == 'Backend' || env.DEPLOY_PART == 'Both') {
-                        sh 'kubectl set image deployment/backend backend=${BACKEND_IMAGE}:${BUILD_NUMBER}'
+                    sh(script: "echo $DOCKER_CREDENTIALS")
+                    script {
+                        if (env.DEPLOY_PART == 'Frontend' || env.DEPLOY_PART == 'Both') {
+                            sh 'kubectl set image deployment/frontend frontend=${FRONTEND_IMAGE}:${BUILD_NUMBER}'
+                        }
+                        if (env.DEPLOY_PART == 'Backend' || env.DEPLOY_PART == 'Both') {
+                            sh 'kubectl set image deployment/backend backend=${BACKEND_IMAGE}:${BUILD_NUMBER}'
+                        }
                     }
                 }
             }
@@ -81,5 +85,5 @@ pipeline {
                 cleanWs(disableDeferredWipeout: true)
             }
         }
+        }
     }
-}
